@@ -1,12 +1,18 @@
+import { getUserToken } from "@/middleware/auth";
+
 const formatDate = (date: string) => date.replace(/\//g, '-');
 
 /**
  * Ambil aktivitas berdasarkan tanggal. Jika tidak ada, fallback ke nama hari.
  * @param date Tanggal lengkap, misal "26/05/2025"
  */
-export async function getCustomAgenda(date: string): Promise<{ time: string; activity: string }[]> {
-  try {
-    const res = await fetch(`/api/agenda?date=${formatDate(date)}`);
+export async function getCustomAgenda(date: string, token: string): Promise<{ time: string; activity: string }[]> {
+   try {
+    const res = await fetch(`/api/agenda?date=${formatDate(date)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
     if (!res.ok) return [];
     const data = await res.json();
     return data.activities || [];
@@ -21,11 +27,13 @@ export async function getCustomAgenda(date: string): Promise<{ time: string; act
  * @param date string Tanggal penuh (misal "26/05/2025")
  * @param checked number[] Index aktivitas yang dicentang
  */
-export async function saveAgenda(date: string, checked: number[]) {
+export async function saveAgenda(date: string, checked: number[], token: string) {
   try {
     await fetch('/api/agenda', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${token}`, 
+        'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         date: formatDate(date), 
         checked 

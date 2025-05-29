@@ -13,14 +13,28 @@ export default function HomePage() {
   const [activities, setActivities] = useState<{ time: string; activity: string }[]>([]);
   const [checked, setChecked] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState('');
 
   useEffect(() => {
     const fetchAgenda = async () => {
       setLoading(true);
-      const data = await getCustomAgenda(date); // Ambil agenda berdasarkan tanggal
+      const res = await fetch('/api/user');
+      if (!res.ok) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const { token } = await res.json();
+      setToken(token);
+      
+      const data = await getCustomAgenda(date, token); // Ambil agenda berdasarkan tanggal
       setActivities(data);
 
-      const stored = await fetch(`/api/agenda?date=${(formatDate(date))}`).then(res => res.json());
+      const stored = await fetch(`/api/agenda?date=${formatDate(date)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }).then(res => res.json());
       setChecked(stored.checked || []);
       setLoading(false);
     };
@@ -33,7 +47,7 @@ export default function HomePage() {
       ? checked.filter(i => i !== index)
       : [...checked, index];
     setChecked(updated);
-    await saveAgenda(date, updated);
+    await saveAgenda(date, updated, token);
   };
 
   const progress = activities.length === 0 ? 0 : Math.round((checked.length / activities.length) * 100);
